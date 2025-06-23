@@ -29,17 +29,7 @@ A web application to help students, faculty, and visitors find and share spots i
 4. **Run the Project**
    - Place the project folder in your web server directory (e.g., `htdocs` for XAMPP).
    - Access `index.php` via your browser (e.g., `http://localhost/campusNavigatorCursor/index.php`).
-5. **Add Categories**
-   - Use phpMyAdmin or MySQL CLI:
-     ```sql
-     INSERT INTO categories (name, icon) VALUES
-       ('Cafeteria', '🍽️'),
-       ('Library', '📚'),
-       ('ATM', '🏧'),
-       ('Shop', '🛒'),
-       ('Hangout', '🎉');
-     ```
-6. **Create Users**
+5. **Create Users**
    - Register as user, faculty, or admin (set role in database for admin).
 
 ## Usage
@@ -48,11 +38,12 @@ A web application to help students, faculty, and visitors find and share spots i
 - **Admin:** All authorities, manage users/faculties, approve/reject/delete posts.
 
 ## Weather API
-- Uses [OpenWeatherMap](https://openweathermap.org/) for live weather in Kochi.
-- API key is included in `includes/functions.php`.
+- Uses [OpenWeatherMap](https://openweathermap.org/) for live weather.
+
+
 
 ## Credits
-- Developed by [Your Name] for BCA Mini Project
+- Developed by Adhithian ,Midhun ,Althaf for BCA Mini Project
 - Tailwind CSS, OpenWeatherMap API
 
 ---

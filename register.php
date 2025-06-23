@@ -52,4 +52,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         Already have an account? <a href="login.php" class="text-blue-600 hover:underline">Login</a>
     </div>
 </div>
+
 <?php include 'includes/footer.php'; ?> 
