@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Invalid password.';
         }
     } else {
-        $error = 'No user found with that email.';
+        $error = 'No user found with that em55.ail.';
     }
 }
 ?>

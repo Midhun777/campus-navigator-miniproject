@@ -1,0 +1,26 @@
+{
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.11"
+  },
+  "name": "campusnavigatorcursor",
+  "version": "1.0.0",
+  "description": "A web application to help students, faculty, and visitors find and share spots in and around campus. Built as a mini project for BCA using PHP, MySQL, HTML, and Tailwind CSS.",
+  "main": "index.js",
+  "devDependencies": {
+    "tailwindcss": "^4.1.11"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Midhun777/campus-navigator-miniproject.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Midhun777/campus-navigator-miniproject/issues"
+  },
+  "homepage": "https://github.com/Midhun777/campus-navigator-miniproject#readme"
+}

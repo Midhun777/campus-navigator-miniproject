@@ -4,11 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campus Navigator</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script>
-    // Dark mode toggle
+    <link href="src/output.css" rel="stylesheet">
+    <!-- <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"> -->
+    <script>window.addEventListener('DOMContentLoaded', () => {
+        const userTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (userTheme === 'dark' || (!userTheme && systemPrefersDark)) {
+            document.documentElement.classList.add('dark');
+            document.getElementById('theme-icon').textContent = '☀️';
+        } else {
+            document.documentElement.classList.remove('dark');
+            document.getElementById('theme-icon').textContent = '🌙';
+        }
+    });
+
     function toggleDarkMode() {
-        document.documentElement.classList.toggle('dark');
+        const html = document.documentElement;
+        const icon = document.getElementById('theme-icon');
+        html.classList.toggle('dark');
+
+        if (html.classList.contains('dark')) {
+            localStorage.setItem('theme', 'dark');
+            icon.textContent = '☀️';
+        } else {
+            localStorage.setItem('theme', 'light');
+            icon.textContent = '🌙';
+        }
     }
     </script>
 </head>
@@ -28,7 +50,10 @@
         <a href="logout.php" class="hover:underline">Logout</a>
     </nav>
     <div class="flex items-center space-x-2">
-        <button onclick="toggleDarkMode()" class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700">🌙</button>
+    <button onclick="toggleDarkMode()" class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700">
+    <span id="theme-icon">🌙</span>
+</button>
+
         <span id="greeting">Hello, User!</span>
     </div>
 </header>
