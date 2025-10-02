@@ -49,10 +49,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form method="POST" enctype="multipart/form-data" class="space-y-4">
         <input type="text" name="name" placeholder="Spot Name" required class="w-full px-3 py-2 border rounded">
         <textarea name="description" placeholder="Description" required class="w-full px-3 py-2 border rounded"></textarea>
-        <select name="category_id" required class="w-full px-3 py-2 border rounded">
-            <option value="">Select Category</option>
+        <select name="category_id" required class="w-full px-3 py-2 border rounded text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">
+            <option value="" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">Select Category</option>
             <?php foreach ($categories as $cat): ?>
-                <option value="<?php echo $cat['id']; ?>"><?php echo htmlspecialchars($cat['name']); ?></option>
+                <option value="<?php echo $cat['id']; ?>" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"><?php echo htmlspecialchars($cat['name']); ?></option>
             <?php endforeach; ?>
         </select>
         <input type="text" name="timing" placeholder="Timing (e.g. 9am - 5pm)" required class="w-full px-3 py-2 border rounded">

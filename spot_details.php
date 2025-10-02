@@ -126,10 +126,10 @@ if (isset($_POST['suggest_edit']) && trim($_POST['suggestion'])) {
     <div class="mt-6">
         <h3 class="font-semibold mb-2">Rate this spot:</h3>
         <form method="POST" class="flex items-center space-x-2">
-            <select name="rating" class="px-2 py-1 border rounded">
-                <option value="">Select</option>
+            <select name="rating" class="px-2 py-1 border rounded text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">
+                <option value="" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">Select</option>
                 <?php for ($i=1; $i<=5; $i++): ?>
-                    <option value="<?php echo $i; ?>"><?php echo $i; ?> ★</option>
+                    <option value="<?php echo $i; ?>" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"><?php echo $i; ?> ★</option>
                 <?php endfor; ?>
             </select>
             <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded">Rate</button>
