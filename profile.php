@@ -2,6 +2,7 @@
 include 'includes/header.php';
 include 'includes/db.php';
 include 'includes/auth.php';
+include 'includes/functions.php';
 require_login();
 
 $user_id = $_SESSION['user_id'];
@@ -11,6 +12,46 @@ $stmt = $conn->prepare('SELECT * FROM users WHERE id = ?');
 $stmt->bind_param('i', $user_id);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
+// Handle profile picture change
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_profile_pic'])) {
+    if (isset($_FILES['profile_pic'])) {
+        $fileError = $_FILES['profile_pic']['error'];
+        if ($fileError === UPLOAD_ERR_OK) {
+            $target_dir = 'assets/uploads/profile/';
+            if (!is_dir($target_dir)) { @mkdir($target_dir, 0755, true); }
+            $originalName = basename($_FILES['profile_pic']['name']);
+            $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+            $allowed = ['jpg','jpeg','png','gif','webp'];
+            if (in_array($extension, $allowed)) {
+                $safeName = preg_replace('/[^A-Za-z0-9_.-]/', '_', pathinfo($originalName, PATHINFO_FILENAME));
+                $finalName = $safeName . '_' . time() . '.' . $extension;
+                $target_file = $target_dir . $finalName;
+                $tmp = $_FILES['profile_pic']['tmp_name'];
+                $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+                $mime = $finfo ? @finfo_file($finfo, $tmp) : null;
+                if ($finfo) { @finfo_close($finfo); }
+                $allowedMimes = ['image/jpeg','image/png','image/gif','image/webp'];
+                if (!$mime || in_array($mime, $allowedMimes)) {
+                    if (move_uploaded_file($tmp, $target_file)) {
+                        $upd = $conn->prepare('UPDATE users SET profile_pic=? WHERE id=?');
+                        $upd->bind_param('si', $target_file, $user_id);
+                        $upd->execute();
+                        header('Location: profile.php?msg=Profile+picture+updated');
+                        exit();
+                    } else {
+                        $upload_error = 'Failed to move uploaded file.';
+                    }
+                } else {
+                    $upload_error = 'Unsupported image type.';
+                }
+            } else {
+                $upload_error = 'Invalid image extension.';
+            }
+        } elseif ($fileError !== UPLOAD_ERR_NO_FILE) {
+            $upload_error = 'Image upload error (code ' . $fileError . ').';
+        }
+    }
+}
 
 // Handle delete post
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
@@ -22,6 +63,7 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $result = $check->get_result();
     if ($result->num_rows > 0) {
         $conn->query('DELETE FROM spots WHERE id = ' . $del_id);
+        audit_log($conn, 'spot_delete', 'spot', $del_id, ['by' => 'owner_or_admin']);
         header('Location: profile.php?msg=Spot+deleted');
         exit();
     }
@@ -43,12 +85,20 @@ while ($row = $fav_res->fetch_assoc()) {
 ?>
 <div class="max-w-4xl mx-auto mt-8">
     <div class="flex items-center space-x-4 mb-8">
-        <img src="<?php echo $user['profile_pic'] ? $user['profile_pic'] : 'assets/images/default_user.png'; ?>" alt="Profile" class="h-20 w-20 rounded-full object-cover">
+        <img src="<?php echo $user['profile_pic'] ? $user['profile_pic'] : (is_dir('assets/icons/avatars') ? (function(){ $files = glob('assets/icons/avatars/*.{png,jpg,jpeg,webp,gif}', GLOB_BRACE); return $files ? $files[array_rand($files)] : 'assets/images/default_user.png'; })() : 'assets/images/default_user.png'); ?>" alt="Profile" class="h-20 w-20 rounded-full object-cover">
         <div>
             <h2 class="text-2xl font-bold"><?php echo htmlspecialchars($user['name']); ?></h2>
             <div class="text-gray-500"><?php echo htmlspecialchars($user['email']); ?></div>
             <div class="text-sm text-gray-400 capitalize">Role: <?php echo htmlspecialchars($user['role']); ?></div>
         </div>
+    </div>
+    <div class="mb-8">
+        <form method="POST" enctype="multipart/form-data" class="flex items-center gap-3">
+            <input type="file" name="profile_pic" accept="image/*" class="px-3 py-2 border rounded">
+            <button type="submit" name="change_profile_pic" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Change Picture</button>
+        </form>
+        <?php if (isset($upload_error)): ?><div class="mt-2 text-red-600"><?php echo $upload_error; ?></div><?php endif; ?>
+        <?php if (isset($_GET['msg'])): ?><div class="mt-2 text-green-600"><?php echo htmlspecialchars($_GET['msg']); ?></div><?php endif; ?>
     </div>
     <h3 class="text-xl font-semibold mb-2">Your Posts</h3>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

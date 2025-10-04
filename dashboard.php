@@ -12,9 +12,17 @@ while ($row = $cat_res->fetch_assoc()) {
     $categories[] = $row;
 }
 
-// Fetch featured spots (approved, limit 4)
+// Active category filter
+$active_cat = isset($_GET['cat']) ? intval($_GET['cat']) : 0;
+
+// Fetch featured spots (approved, optional category filter, limit 8)
 $spots = [];
-$spot_res = $conn->query("SELECT spots.*, categories.name AS category_name FROM spots LEFT JOIN categories ON spots.category_id = categories.id WHERE status='approved' ORDER BY created_at DESC LIMIT 4");
+$spot_sql = "SELECT spots.*, categories.name AS category_name FROM spots LEFT JOIN categories ON spots.category_id = categories.id WHERE status='approved'";
+if ($active_cat > 0) {
+    $spot_sql .= " AND spots.category_id = " . $active_cat;
+}
+$spot_sql .= " ORDER BY created_at DESC LIMIT 8";
+$spot_res = $conn->query($spot_sql);
 while ($row = $spot_res->fetch_assoc()) {
     $spots[] = $row;
 }
@@ -33,11 +41,10 @@ while ($row = $spot_res->fetch_assoc()) {
     </div>
     <div class="mb-8">
       <div class="flex flex-wrap gap-3 justify-center md:justify-start">
-        <span class="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-4 py-2 rounded-full cursor-pointer shadow hover:scale-105 transition-transform duration-200">Hungry?</span>
-        <span class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-4 py-2 rounded-full cursor-pointer shadow hover:scale-105 transition-transform duration-200">Need a place to study?</span>
-        <span class="bg-pink-100 dark:bg-pink-900 text-pink-800 dark:text-pink-200 px-4 py-2 rounded-full cursor-pointer shadow hover:scale-105 transition-transform duration-200">Hangout spots</span>
-        <span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-4 py-2 rounded-full cursor-pointer shadow hover:scale-105 transition-transform duration-200">ATM/Bank</span>
-        <span class="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-4 py-2 rounded-full cursor-pointer shadow hover:scale-105 transition-transform duration-200">Shops</span>
+        <a href="dashboard.php" class="px-4 py-2 rounded-full shadow transition-transform duration-200 hover:scale-105 border text-sm <?php echo $active_cat === 0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700'; ?>">All</a>
+        <?php foreach ($categories as $c): ?>
+          <a href="dashboard.php?cat=<?php echo $c['id']; ?>" class="px-4 py-2 rounded-full shadow transition-transform duration-200 hover:scale-105 border text-sm <?php echo ($active_cat === (int)$c['id']) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700'; ?>"><?php echo htmlspecialchars($c['name']); ?></a>
+        <?php endforeach; ?>
       </div>
     </div>
     <h2 class="text-2xl font-semibold mb-6 text-blue-900 dark:text-blue-200 transition-colors duration-300">Featured Spots</h2>
@@ -61,10 +68,10 @@ while ($row = $spot_res->fetch_assoc()) {
     <h2 class="text-2xl font-semibold mb-6 text-blue-900 dark:text-blue-200 transition-colors duration-300">Categories</h2>
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
       <?php foreach ($categories as $cat): ?>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 flex flex-col items-center transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+        <a href="dashboard.php?cat=<?php echo $cat['id']; ?>" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 flex flex-col items-center transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 border <?php echo ($active_cat === (int)$cat['id']) ? 'border-blue-500' : 'border-transparent'; ?>">
           <div class="text-4xl mb-2 animate-fade-in-slow"><?php echo $cat['icon'] ? $cat['icon'] : '📍'; ?></div>
           <div class="font-semibold text-gray-900 dark:text-gray-100 transition-colors duration-300"><?php echo htmlspecialchars($cat['name']); ?></div>
-        </div>
+        </a>
       <?php endforeach; ?>
       <?php if (empty($categories)): ?>
         <div class="col-span-4 text-center text-gray-500">No categories yet.</div>

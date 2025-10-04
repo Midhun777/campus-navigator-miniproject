@@ -2,6 +2,7 @@
 include 'includes/header.php';
 include 'includes/db.php';
 include 'includes/auth.php';
+include 'includes/functions.php';
 require_login();
 
 $role = $_SESSION['role'];
@@ -11,18 +12,22 @@ $user_id = $_SESSION['user_id'];
 if (($role === 'admin' || $role === 'faculty') && isset($_GET['approve'])) {
     $id = intval($_GET['approve']);
     $conn->query("UPDATE spots SET status='approved' WHERE id=$id");
+    audit_log($conn, 'spot_approve', 'spot', $id, null);
 }
 if (($role === 'admin' || $role === 'faculty') && isset($_GET['reject'])) {
     $id = intval($_GET['reject']);
     $conn->query("UPDATE spots SET status='pending' WHERE id=$id");
+    audit_log($conn, 'spot_set_pending', 'spot', $id, null);
 }
 if ((($role === 'admin' || $role === 'faculty') && isset($_GET['delete'])) || ($role === 'user' && isset($_GET['delete']))) {
     $id = intval($_GET['delete']);
     // Only allow delete if admin/faculty or user owns the post
     if ($role === 'admin' || $role === 'faculty') {
         $conn->query("DELETE FROM spots WHERE id=$id");
+        audit_log($conn, 'spot_delete', 'spot', $id, ['by' => $role]);
     } else {
         $conn->query("DELETE FROM spots WHERE id=$id AND user_id=$user_id");
+        audit_log($conn, 'spot_delete', 'spot', $id, ['by' => 'owner']);
     }
 }
 
@@ -60,17 +65,17 @@ while ($row = $res->fetch_assoc()) {
                 <td class="px-4 py-2"><?php echo htmlspecialchars($post['user_name']); ?></td>
                 <td class="px-4 py-2 capitalize"><?php echo htmlspecialchars($post['status']); ?></td>
                 <td class="px-4 py-2 space-x-2">
-                    <a href="spot_details.php?id=<?php echo $post['id']; ?>" class="text-green-600 hover:underline text-xs">View</a>
+                    <a href="spot_details.php?id=<?php echo $post['id']; ?>" class="inline-flex items-center px-2.5 py-1.5 rounded text-white bg-green-600 hover:bg-green-700 text-xs">View</a>
                     <?php if ($role === 'admin' || $role === 'faculty'): ?>
                         <?php if ($post['status'] === 'pending'): ?>
-                            <a href="manage_posts.php?approve=<?php echo $post['id']; ?>" class="text-blue-600 hover:underline text-xs">Approve</a>
+                            <a href="manage_posts.php?approve=<?php echo $post['id']; ?>" class="inline-flex items-center px-2.5 py-1.5 rounded text-white bg-blue-600 hover:bg-blue-700 text-xs">Approve</a>
                         <?php else: ?>
-                            <a href="manage_posts.php?reject=<?php echo $post['id']; ?>" class="text-yellow-600 hover:underline text-xs">Set Pending</a>
+                            <a href="manage_posts.php?reject=<?php echo $post['id']; ?>" class="inline-flex items-center px-2.5 py-1.5 rounded text-white bg-yellow-600 hover:bg-yellow-700 text-xs">Set Pending</a>
                         <?php endif; ?>
-                        <a href="manage_posts.php?delete=<?php echo $post['id']; ?>" class="text-red-600 hover:underline text-xs" onclick="return confirm('Delete this post?');">Delete</a>
+                        <a href="manage_posts.php?delete=<?php echo $post['id']; ?>" class="inline-flex items-center px-2.5 py-1.5 rounded text-white bg-red-600 hover:bg-red-700 text-xs" onclick="return confirm('Delete this post?');">Delete</a>
                     <?php elseif ($role === 'user' && $post['user_id'] == $user_id): ?>
-                        <a href="edit_spot.php?id=<?php echo $post['id']; ?>" class="text-blue-600 hover:underline text-xs">Edit</a>
-                        <a href="manage_posts.php?delete=<?php echo $post['id']; ?>" class="text-red-600 hover:underline text-xs" onclick="return confirm('Delete this post?');">Delete</a>
+                        <a href="edit_spot.php?id=<?php echo $post['id']; ?>" class="inline-flex items-center px-2.5 py-1.5 rounded text-white bg-blue-600 hover:bg-blue-700 text-xs">Edit</a>
+                        <a href="manage_posts.php?delete=<?php echo $post['id']; ?>" class="inline-flex items-center px-2.5 py-1.5 rounded text-white bg-red-600 hover:bg-red-700 text-xs" onclick="return confirm('Delete this post?');">Delete</a>
                     <?php endif; ?>
                 </td>
             </tr>

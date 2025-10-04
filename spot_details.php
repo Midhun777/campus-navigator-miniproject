@@ -2,6 +2,7 @@
 include 'includes/header.php';
 include 'includes/db.php';
 include 'includes/auth.php';
+include 'includes/functions.php';
 require_login();
 
 $spot_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -34,12 +35,14 @@ if (isset($_POST['favorite'])) {
         $fav = $conn->prepare('INSERT INTO favorites (user_id, spot_id) VALUES (?, ?)');
         $fav->bind_param('ii', $user_id, $spot_id);
         $fav->execute();
+        audit_log($conn, 'favorite_add', 'spot', $spot_id, null);
     }
 }
 if (isset($_POST['unfavorite'])) {
     $unfav = $conn->prepare('DELETE FROM favorites WHERE user_id = ? AND spot_id = ?');
     $unfav->bind_param('ii', $user_id, $spot_id);
     $unfav->execute();
+    audit_log($conn, 'favorite_remove', 'spot', $spot_id, null);
 }
 // Check if favorited
 $fav_check = $conn->prepare('SELECT id FROM favorites WHERE user_id = ? AND spot_id = ?');
@@ -60,10 +63,12 @@ if (isset($_POST['rating'])) {
         $upd = $conn->prepare('UPDATE ratings SET rating = ? WHERE user_id = ? AND spot_id = ?');
         $upd->bind_param('iii', $rating, $user_id, $spot_id);
         $upd->execute();
+        audit_log($conn, 'rating_update', 'spot', $spot_id, ['rating' => $rating]);
     } else {
         $ins = $conn->prepare('INSERT INTO ratings (user_id, spot_id, rating) VALUES (?, ?, ?)');
         $ins->bind_param('iii', $user_id, $spot_id, $rating);
         $ins->execute();
+        audit_log($conn, 'rating_add', 'spot', $spot_id, ['rating' => $rating]);
     }
 }
 // Get average rating
@@ -78,6 +83,7 @@ if (isset($_POST['comment']) && trim($_POST['comment'])) {
     $ins = $conn->prepare('INSERT INTO comments (user_id, spot_id, comment) VALUES (?, ?, ?)');
     $ins->bind_param('iis', $user_id, $spot_id, $comment);
     $ins->execute();
+    audit_log($conn, 'comment_add', 'spot', $spot_id, null);
 }
 // Fetch comments
 $comments = [];
@@ -93,6 +99,7 @@ if (isset($_POST['report']) && trim($_POST['report_reason'])) {
     $ins->bind_param('iis', $user_id, $spot_id, $reason);
     $ins->execute();
     $report_msg = 'Reported. Thank you!';
+    audit_log($conn, 'report_add', 'spot', $spot_id, null);
 }
 // Handle suggest edit
 if (isset($_POST['suggest_edit']) && trim($_POST['suggestion'])) {
@@ -101,6 +108,7 @@ if (isset($_POST['suggest_edit']) && trim($_POST['suggestion'])) {
     $ins->bind_param('iis', $user_id, $spot_id, $suggestion);
     $ins->execute();
     $suggest_msg = 'Suggestion submitted!';
+    audit_log($conn, 'suggest_edit_add', 'spot', $spot_id, null);
 }
 ?>
 <div class="max-w-3xl mx-auto mt-8 p-6 bg-white dark:bg-gray-800 rounded shadow">

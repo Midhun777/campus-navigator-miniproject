@@ -2,6 +2,7 @@
 include 'includes/header.php';
 include 'includes/db.php';
 include 'includes/auth.php';
+include 'includes/functions.php';
 require_login();
 
 $spot_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -41,18 +42,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $distance = $_POST['distance'];
     $image = $spot['image'];
 
-    // Handle image upload
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $target_dir = 'assets/images/';
-        $target_file = $target_dir . time() . '_' . basename($_FILES['image']['name']);
-        if (move_uploaded_file($_FILES['image']['tmp_name'], $target_file)) {
-            $image = $target_file;
+    // Handle image upload (create dir, validate, and move)
+    if (isset($_FILES['image'])) {
+        $fileError = $_FILES['image']['error'];
+        if ($fileError === UPLOAD_ERR_OK) {
+            $target_dir = 'assets/images/';
+            if (!is_dir($target_dir)) {
+                @mkdir($target_dir, 0755, true);
+            }
+            $originalName = basename($_FILES['image']['name']);
+            $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+            $allowed = ['jpg','jpeg','png','gif','webp'];
+            if (in_array($extension, $allowed)) {
+                $safeName = preg_replace('/[^A-Za-z0-9_.-]/', '_', pathinfo($originalName, PATHINFO_FILENAME));
+                $finalName = $safeName . '_' . time() . '.' . $extension;
+                $target_file = $target_dir . $finalName;
+                $tmp = $_FILES['image']['tmp_name'];
+                $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+                $mime = $finfo ? @finfo_file($finfo, $tmp) : null;
+                if ($finfo) { @finfo_close($finfo); }
+                $allowedMimes = ['image/jpeg','image/png','image/gif','image/webp'];
+                if (!$mime || in_array($mime, $allowedMimes)) {
+                    if (move_uploaded_file($tmp, $target_file)) {
+                        $image = $target_file;
+                    } else {
+                        $error = 'Image upload failed while moving the file.';
+                    }
+                } else {
+                    $error = 'Unsupported image type.';
+                }
+            } else {
+                $error = 'Invalid image extension. Allowed: jpg, jpeg, png, gif, webp.';
+            }
+        } elseif ($fileError !== UPLOAD_ERR_NO_FILE) {
+            $error = 'Image upload error (code ' . $fileError . ').';
         }
     }
 
     $stmt = $conn->prepare('UPDATE spots SET name=?, description=?, image=?, category_id=?, timing=?, direction=?, distance=? WHERE id=?');
     $stmt->bind_param('sssisssi', $name, $description, $image, $category_id, $timing, $direction, $distance, $spot_id);
     if ($stmt->execute()) {
+        audit_log($conn, 'spot_update', 'spot', $spot_id, [
+            'name' => $name,
+            'category_id' => $category_id
+        ]);
         header('Location: spot_details.php?id=' . $spot_id . '&msg=Spot+updated');
         exit();
     } else {

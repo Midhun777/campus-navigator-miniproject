@@ -2,6 +2,7 @@
 include 'includes/header.php';
 include 'includes/db.php';
 include 'includes/auth.php';
+include 'includes/functions.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'];
@@ -17,13 +18,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = $id;
             $_SESSION['name'] = $name;
             $_SESSION['role'] = $role;
+            audit_log($conn, 'login', 'user', $id, ['email' => $email]);
             header('Location: dashboard.php');
             exit();
         } else {
             $error = 'Invalid password.';
+            audit_log($conn, 'login_failed', 'user', null, ['email' => $email]);
         }
     } else {
-        $error = 'No user found with that em55.ail.';
+        $error = 'No user found with that email.';
+        audit_log($conn, 'login_no_user', 'user', null, ['email' => $email]);
     }
 }
 ?>
@@ -33,8 +37,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="mb-4 text-red-600"><?php echo $error; ?></div>
     <?php endif; ?>
     <form method="POST" class="space-y-4">
-        <input type="email" name="email" placeholder="Email" required class="w-full px-3 py-2 border rounded">
-        <input type="password" name="password" placeholder="Password" required class="w-full px-3 py-2 border rounded">
+        <label class="block">
+            <span class="text-sm">Email</span>
+            <input type="email" name="email" required class="w-full px-3 py-2 border rounded">
+        </label>
+        <label class="block">
+            <span class="text-sm">Password</span>
+            <input type="password" name="password" required class="w-full px-3 py-2 border rounded">
+        </label>
         <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Login</button>
     </form>
     <div class="mt-4 text-center">

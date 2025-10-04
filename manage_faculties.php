@@ -2,6 +2,7 @@
 include 'includes/header.php';
 include 'includes/db.php';
 include 'includes/auth.php';
+include 'includes/functions.php';
 require_login();
 if (!is_admin()) {
     echo '<div class="text-center mt-8 text-red-600">Access denied.</div>';
@@ -14,6 +15,7 @@ if (isset($_GET['delete'])) {
     $id = intval($_GET['delete']);
     if ($id !== $admin_id) {
         $conn->query("DELETE FROM users WHERE id=$id AND role='faculty'");
+        audit_log($conn, 'faculty_delete', 'user', $id, null);
     }
 }
 if (isset($_GET['promote']) && isset($_GET['role'])) {
@@ -23,6 +25,7 @@ if (isset($_GET['promote']) && isset($_GET['role'])) {
         $stmt = $conn->prepare('UPDATE users SET role=? WHERE id=? AND role="faculty"');
         $stmt->bind_param('si', $role, $id);
         $stmt->execute();
+        audit_log($conn, 'faculty_role_change', 'user', $id, ['role' => $role]);
     }
 }
 // Fetch faculties
