@@ -1,5 +1,4 @@
 <?php
-include 'includes/header.php';
 include 'includes/db.php';
 include 'includes/auth.php';
 include 'includes/functions.php';
@@ -82,6 +81,17 @@ $fav_res = $conn->query("SELECT spots.*, categories.name AS category_name FROM f
 while ($row = $fav_res->fetch_assoc()) {
     $favorites[] = $row;
 }
+
+// Fetch recent activity (audit logs)
+$activities = [];
+$act_stmt = $conn->prepare('SELECT action, entity_type, entity_id, details, created_at FROM audit_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 20');
+$act_stmt->bind_param('i', $user_id);
+$act_stmt->execute();
+$act_res = $act_stmt->get_result();
+while ($row = $act_res->fetch_assoc()) {
+    $activities[] = $row;
+}
+include 'includes/header.php';
 ?>
 <div class="max-w-4xl mx-auto mt-8">
     <div class="flex items-center space-x-4 mb-8">
@@ -134,6 +144,29 @@ while ($row = $fav_res->fetch_assoc()) {
         <?php endforeach; ?>
         <?php if (empty($favorites)): ?>
             <div class="col-span-2 text-center text-gray-500">No favorites yet.</div>
+        <?php endif; ?>
+    </div>
+    <h3 class="text-xl font-semibold mt-10 mb-2">Recent Activity</h3>
+    <div class="bg-white dark:bg-gray-800 rounded shadow divide-y">
+        <?php foreach ($activities as $a): ?>
+            <div class="p-3 flex items-start justify-between text-sm">
+                <div>
+                    <div class="font-medium capitalize"><?php echo htmlspecialchars($a['action']); ?></div>
+                    <div class="text-gray-500 dark:text-gray-400">
+                        <?php echo htmlspecialchars($a['entity_type'] ?: 'app'); ?>
+                        <?php if (!empty($a['entity_id'])): ?>#<?php echo (int)$a['entity_id']; ?><?php endif; ?>
+                    </div>
+                    <?php if (!empty($a['details'])): ?>
+                        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[60ch]">
+                            <?php echo htmlspecialchars(is_string($a['details']) ? $a['details'] : json_encode($a['details'])); ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <div class="text-xs text-gray-400 ml-4 whitespace-nowrap"><?php echo htmlspecialchars($a['created_at']); ?></div>
+            </div>
+        <?php endforeach; ?>
+        <?php if (empty($activities)): ?>
+            <div class="p-4 text-center text-gray-500">No recent activity.</div>
         <?php endif; ?>
     </div>
 </div>

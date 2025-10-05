@@ -2,6 +2,20 @@
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
+// Compute pending approvals count for admin/faculty
+$pendingApprovals = 0;
+if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['faculty','admin'])) {
+    // Ensure DB connection is available
+    @include_once __DIR__ . '/db.php';
+    if (isset($conn) && $conn) {
+        $res = $conn->query("SELECT COUNT(*) AS cnt FROM spots WHERE status='pending'");
+        if ($res) {
+            $row = $res->fetch_assoc();
+            $pendingApprovals = isset($row['cnt']) ? (int)$row['cnt'] : 0;
+        }
+    }
+}
+$pendingApprovalsDisplay = $pendingApprovals > 99 ? '99+' : $pendingApprovals;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -49,10 +63,7 @@ if (session_status() == PHP_SESSION_NONE) {
     <nav class="space-x-4">
         <a href="index.php" class="hover:underline">Home</a>
         <a href="dashboard.php" class="hover:underline">Dashboard</a>
-        <a href="lost_found.php" class="hover:underline">Lost &amp; Found</a>
-        <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['faculty','admin'])): ?>
-            <a href="manage_posts.php" class="hover:underline">Manage Posts</a>
-        <?php endif; ?>
+        <?php // Admin/faculty links moved to avatar dropdown ?>
     </nav>
 
     <!-- Avatar and theme controls -->
@@ -74,7 +85,17 @@ if (session_status() == PHP_SESSION_NONE) {
             <div id="avatarDropdown" class="fixed right-4 top-16 min-w-48 max-w-xs bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-[9999] transition-all duration-200 hidden" style="display: none;">
                 <a href="profile.php" class="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Profile</a>
                 <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['faculty','admin'])): ?>
-                    <a href="manage_posts.php" class="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Manage Posts</a>
+                    <a href="manage_posts.php" class="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <span class="inline-flex items-center">
+                            <span>Manage Posts</span>
+                            <?php if (!empty($pendingApprovals)): ?>
+                                <span class="ml-2 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1.5 rounded-full bg-red-600 text-white text-xs font-semibold ring-2 ring-white dark:ring-gray-800">
+                                    <?php echo $pendingApprovalsDisplay; ?>
+                                </span>
+                            <?php endif; ?>
+                        </span>
+                    </a>
+                    <a href="moderation.php" class="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Moderation</a>
                 <?php endif; ?>
                 <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
                     <a href="view_audit.php" class="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Audit Logs</a>

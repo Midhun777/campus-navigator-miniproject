@@ -1,0 +1,17 @@
+ErrorDocument 404 /404.php
+ErrorDocument 500 /500.php
+
+<IfModule mod_negotiation.c>
+  Options -MultiViews
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Ensure directory slash
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  # Fall through to 404 if not found
+  RewriteRule ^ - [L]
+</IfModule>
+
+

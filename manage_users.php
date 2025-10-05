@@ -1,5 +1,4 @@
 <?php
-include 'includes/header.php';
 include 'includes/db.php';
 include 'includes/auth.php';
 include 'includes/functions.php';
@@ -16,6 +15,8 @@ if (isset($_GET['delete'])) {
     if ($id !== $admin_id) {
         $conn->query("DELETE FROM users WHERE id=$id");
         audit_log($conn, 'user_delete', 'user', $id, null);
+        header('Location: manage_users.php?msg=User+deleted');
+        exit();
     }
 }
 if (isset($_GET['promote']) && isset($_GET['role'])) {
@@ -26,23 +27,68 @@ if (isset($_GET['promote']) && isset($_GET['role'])) {
         $stmt->bind_param('si', $role, $id);
         $stmt->execute();
         audit_log($conn, 'user_role_change', 'user', $id, ['role' => $role]);
+        header('Location: manage_users.php?msg=Role+updated');
+        exit();
     }
 }
-// Fetch users
-$res = $conn->query("SELECT * FROM users WHERE id != $admin_id ORDER BY role, name");
+// Filters, sorting, pagination
+$roleFilter = isset($_GET['role']) && in_array($_GET['role'], ['all','user','faculty','admin']) ? $_GET['role'] : 'all';
+$q = isset($_GET['q']) ? trim($_GET['q']) : '';
+$allowedSort = [ 'name' => 'name', 'email' => 'email', 'role' => 'role' ];
+$sort = isset($_GET['sort']) && isset($allowedSort[$_GET['sort']]) ? $_GET['sort'] : 'role';
+$dir = (isset($_GET['dir']) && strtolower($_GET['dir']) === 'desc') ? 'DESC' : 'ASC';
+$perPage = isset($_GET['per_page']) ? max(5, min(50, intval($_GET['per_page']))) : 10;
+$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+$offset = ($page - 1) * $perPage;
+
+$where = [ 'id != ' . intval($admin_id) ];
+if ($roleFilter !== 'all') { $where[] = "role = '" . $conn->real_escape_string($roleFilter) . "'"; }
+if ($q !== '') { $safeQ = $conn->real_escape_string($q); $where[] = "(name LIKE '%$safeQ%' OR email LIKE '%$safeQ%')"; }
+$whereSql = 'WHERE ' . implode(' AND ', $where);
+
+$countRes = $conn->query("SELECT COUNT(*) AS cnt FROM users $whereSql");
+$total = $countRes ? intval($countRes->fetch_assoc()['cnt']) : 0;
+$totalPages = max(1, (int)ceil($total / $perPage));
+if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
+
+$sql = "SELECT id, name, email, role FROM users $whereSql ORDER BY " . $allowedSort[$sort] . " $dir LIMIT $perPage OFFSET $offset";
+$res = $conn->query($sql);
 $users = [];
-while ($row = $res->fetch_assoc()) {
-    $users[] = $row;
-}
+if ($res) { while ($row = $res->fetch_assoc()) { $users[] = $row; } }
+include 'includes/header.php';
 ?>
 <div class="max-w-3xl mx-auto mt-8">
     <h2 class="text-2xl font-bold mb-4">Manage Users</h2>
+    <form method="GET" class="mb-4 flex flex-wrap items-end gap-3">
+        <div>
+            <label class="block text-xs mb-1">Role</label>
+            <select name="role" class="px-2 py-1 border rounded text-sm">
+                <option value="all" <?php if ($roleFilter==='all') echo 'selected'; ?>>All</option>
+                <option value="admin" <?php if ($roleFilter==='admin') echo 'selected'; ?>>Admin</option>
+                <option value="faculty" <?php if ($roleFilter==='faculty') echo 'selected'; ?>>Faculty</option>
+                <option value="user" <?php if ($roleFilter==='user') echo 'selected'; ?>>User</option>
+            </select>
+        </div>
+        <div class="flex-1 min-w-[180px]">
+            <label class="block text-xs mb-1">Search</label>
+            <input type="text" name="q" value="<?php echo htmlspecialchars($q); ?>" class="w-full px-2 py-1 border rounded text-sm" placeholder="Name or email" />
+        </div>
+        <div>
+            <label class="block text-xs mb-1">Per page</label>
+            <select name="per_page" class="px-2 py-1 border rounded text-sm">
+                <?php foreach ([10,20,30,50] as $pp): ?>
+                    <option value="<?php echo $pp; ?>" <?php if ($perPage===$pp) echo 'selected'; ?>><?php echo $pp; ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <button class="px-3 py-2 bg-blue-600 text-white rounded text-sm">Apply</button>
+    </form>
     <table class="min-w-full bg-white dark:bg-gray-800 rounded shadow">
         <thead>
             <tr>
-                <th class="px-4 py-2">Name</th>
-                <th class="px-4 py-2">Email</th>
-                <th class="px-4 py-2">Role</th>
+                <th class="px-4 py-2"><a href="<?php echo build_user_sort_url('name'); ?>" class="hover:underline">Name</a></th>
+                <th class="px-4 py-2"><a href="<?php echo build_user_sort_url('email'); ?>" class="hover:underline">Email</a></th>
+                <th class="px-4 py-2"><a href="<?php echo build_user_sort_url('role'); ?>" class="hover:underline">Role</a></th>
                 <th class="px-4 py-2">Actions</th>
             </tr>
         </thead>
@@ -71,5 +117,21 @@ while ($row = $res->fetch_assoc()) {
             <?php endif; ?>
         </tbody>
     </table>
+    <div class="flex items-center justify-between mt-4 text-sm">
+        <div>Showing <?php echo count($users); ?> of <?php echo $total; ?> users</div>
+        <div class="space-x-1">
+            <?php
+            function build_user_page_url($p) { $params = $_GET; $params['page'] = $p; return 'manage_users.php?' . http_build_query($params); }
+            ?>
+            <a class="px-2 py-1 border rounded <?php echo $page<=1?'opacity-50 pointer-events-none':''; ?>" href="<?php echo build_user_page_url(max(1,$page-1)); ?>">Prev</a>
+            <span class="px-2">Page <?php echo $page; ?> / <?php echo $totalPages; ?></span>
+            <a class="px-2 py-1 border rounded <?php echo $page>=$totalPages?'opacity-50 pointer-events-none':''; ?>" href="<?php echo build_user_page_url(min($totalPages,$page+1)); ?>">Next</a>
+        </div>
+    </div>
 </div>
 <?php include 'includes/footer.php'; ?> 
+<?php
+function build_user_sort_url($field) {
+    $params = $_GET; $params['sort'] = $field; $params['dir'] = (isset($_GET['sort']) && $_GET['sort']===$field && (isset($_GET['dir']) && strtolower($_GET['dir'])==='asc')) ? 'desc' : 'asc'; return 'manage_users.php?' . http_build_query($params);
+}
+?>

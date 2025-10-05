@@ -1,5 +1,4 @@
 <?php
-include 'includes/header.php';
 include 'includes/db.php';
 include 'includes/auth.php';
 include 'includes/functions.php';
@@ -30,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         audit_log($conn, 'login_no_user', 'user', null, ['email' => $email]);
     }
 }
+include 'includes/header.php';
 ?>
 <div class="max-w-md mx-auto mt-8 p-6 bg-white dark:bg-gray-800 rounded shadow">
     <h2 class="text-2xl font-bold mb-4">Login</h2>
