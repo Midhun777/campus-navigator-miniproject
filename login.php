@@ -6,17 +6,18 @@ include 'includes/functions.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'];
     $password = $_POST['password'];
-    $stmt = $conn->prepare('SELECT id, name, role, password FROM users WHERE email = ?');
+    $stmt = $conn->prepare('SELECT id, name, role, password, college_id FROM users WHERE email = ?');
     $stmt->bind_param('s', $email);
     $stmt->execute();
     $stmt->store_result();
     if ($stmt->num_rows > 0) {
-        $stmt->bind_result($id, $name, $role, $db_password);
+        $stmt->bind_result($id, $name, $role, $db_password, $college_id);
         $stmt->fetch();
         if ($password === $db_password) { // No hashing as requested
             $_SESSION['user_id'] = $id;
             $_SESSION['name'] = $name;
             $_SESSION['role'] = $role;
+            $_SESSION['college_id'] = $college_id; // may be NULL
             audit_log($conn, 'login', 'user', $id, ['email' => $email]);
             header('Location: dashboard.php');
             exit();

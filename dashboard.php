@@ -15,9 +15,13 @@ while ($row = $cat_res->fetch_assoc()) {
 // Active category filter
 $active_cat = isset($_GET['cat']) ? intval($_GET['cat']) : 0;
 
-// Fetch featured spots (approved, optional category filter, limit 8)
+// Fetch featured spots (approved, optional college + category filter, limit 8)
 $spots = [];
 $spot_sql = "SELECT spots.*, categories.name AS category_name FROM spots LEFT JOIN categories ON spots.category_id = categories.id WHERE status='approved'";
+// College filter: if user has a college and is not admin, filter by it. Faculty also filtered by their college.
+if (isset($_SESSION['college_id']) && $_SESSION['college_id'] && !(isset($_SESSION['role']) && $_SESSION['role'] === 'admin')) {
+    $spot_sql .= " AND (spots.college_id = " . intval($_SESSION['college_id']) . ")";
+}
 if ($active_cat > 0) {
     $spot_sql .= " AND spots.category_id = " . $active_cat;
 }
@@ -31,9 +35,9 @@ while ($row = $spot_res->fetch_assoc()) {
 $reports_count = 0;
 $sug_count = 0;
 $pending_approvals_count = 0;
-$rc = $conn->query('SELECT COUNT(*) AS c FROM reports');
+$rc = $conn->query("SELECT COUNT(*) AS c FROM reports WHERE status='open'");
 if ($rc) { $reports_count = (int)$rc->fetch_assoc()['c']; }
-$sc = $conn->query('SELECT COUNT(*) AS c FROM suggested_edits');
+$sc = $conn->query("SELECT COUNT(*) AS c FROM suggested_edits WHERE status='open'");
 if ($sc) { $sug_count = (int)$sc->fetch_assoc()['c']; }
 // Pending approvals (spots)
 $pc = $conn->query("SELECT COUNT(*) AS c FROM spots WHERE status='pending'");

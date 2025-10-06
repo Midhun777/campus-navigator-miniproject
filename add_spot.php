@@ -11,6 +11,11 @@ while ($row = $cat_res->fetch_assoc()) {
     $categories[] = $row;
 }
 
+// Fetch colleges for dropdown
+$colleges = [];
+$c_res = $conn->query('SELECT id, name, code FROM colleges ORDER BY name');
+if ($c_res) { while ($r = $c_res->fetch_assoc()) { $colleges[] = $r; } }
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'];
     $description = $_POST['description'];
@@ -19,6 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $direction = $_POST['direction'];
     $distance = $_POST['distance'];
     $user_id = $_SESSION['user_id'];
+    $defaultCollegeId = isset($_SESSION['college_id']) ? intval($_SESSION['college_id']) : NULL;
+    $college_id = isset($_POST['college_id']) && $_POST['college_id'] !== '' ? intval($_POST['college_id']) : $defaultCollegeId;
     $status = (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') ? 'approved' : 'pending';
     $image = NULL;
 
@@ -60,13 +67,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    $stmt = $conn->prepare('INSERT INTO spots (user_id, name, description, image, category_id, timing, direction, distance, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-    $stmt->bind_param('isssissss', $user_id, $name, $description, $image, $category_id, $timing, $direction, $distance, $status);
+    $stmt = $conn->prepare('INSERT INTO spots (user_id, name, description, image, category_id, timing, direction, distance, status, college_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $stmt->bind_param('isssissssi', $user_id, $name, $description, $image, $category_id, $timing, $direction, $distance, $status, $college_id);
     if ($stmt->execute()) {
         audit_log($conn, 'spot_create', 'spot', $stmt->insert_id, [
             'name' => $name,
             'status' => $status,
-            'category_id' => $category_id
+            'category_id' => $category_id,
+            'college_id' => $college_id
         ]);
         header('Location: dashboard.php?msg=Spot+added+successfully');
         exit();
@@ -96,6 +104,17 @@ include 'includes/header.php';
                 <option value="" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">Select Category</option>
                 <?php foreach ($categories as $cat): ?>
                     <option value="<?php echo $cat['id']; ?>" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"><?php echo htmlspecialchars($cat['name']); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label class="block">
+            <span class="text-sm">College</span>
+            <select name="college_id" class="w-full px-3 py-2 border rounded text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">
+                <option value="" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">Default (your college<?php echo isset($_SESSION['college_id']) && $_SESSION['college_id'] ? '' : ' = none'; ?>)</option>
+                <?php foreach ($colleges as $col): ?>
+                    <option value="<?php echo (int)$col['id']; ?>" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800" <?php echo (isset($_SESSION['college_id']) && (int)$_SESSION['college_id'] === (int)$col['id']) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($col['name']); ?><?php echo isset($col['code']) && $col['code'] ? ' ('.htmlspecialchars($col['code']).')' : ''; ?>
+                    </option>
                 <?php endforeach; ?>
             </select>
         </label>

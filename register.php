@@ -2,11 +2,19 @@
 include 'includes/db.php';
 include 'includes/auth.php';
 
+// Load colleges for dropdown
+$colleges = [];
+$c_res = $conn->query('SELECT id, name, code FROM colleges ORDER BY name');
+if ($c_res) {
+    while ($r = $c_res->fetch_assoc()) { $colleges[] = $r; }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'];
     $email = $_POST['email'];
     $password = $_POST['password'];
     $role = $_POST['role'];
+    $college_id = isset($_POST['college_id']) && $_POST['college_id'] !== '' ? intval($_POST['college_id']) : NULL;
     $profile_pic = NULL;
 
     // Handle profile picture upload or assign random default
@@ -50,12 +58,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    $stmt = $conn->prepare('INSERT INTO users (name, email, password, role, profile_pic) VALUES (?, ?, ?, ?, ?)');
-    $stmt->bind_param('sssss', $name, $email, $password, $role, $profile_pic);
+    $stmt = $conn->prepare('INSERT INTO users (name, email, password, role, profile_pic, college_id) VALUES (?, ?, ?, ?, ?, ?)');
+    $stmt->bind_param('sssssi', $name, $email, $password, $role, $profile_pic, $college_id);
     if ($stmt->execute()) {
         $_SESSION['user_id'] = $stmt->insert_id;
         $_SESSION['name'] = $name;
         $_SESSION['role'] = $role;
+        $_SESSION['college_id'] = $college_id;
         header('Location: dashboard.php');
         exit();
     } else {
@@ -87,6 +96,17 @@ include 'includes/header.php';
             <select name="role" class="w-full px-3 py-2 border rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700" required>
                 <option value="user" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">User</option>
                 <option value="faculty" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">Faculty</option>
+            </select>
+        </label>
+        <label class="block">
+            <span class="text-sm">College (optional)</span>
+            <select name="college_id" class="w-full px-3 py-2 border rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700">
+                <option value="" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">No college (see all posts)</option>
+                <?php foreach ($colleges as $col): ?>
+                    <option value="<?php echo (int)$col['id']; ?>" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
+                        <?php echo htmlspecialchars($col['name']); ?><?php echo isset($col['code']) && $col['code'] ? ' ('.htmlspecialchars($col['code']).')' : ''; ?>
+                    </option>
+                <?php endforeach; ?>
             </select>
         </label>
         <label class="block">

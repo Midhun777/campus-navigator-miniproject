@@ -13,10 +13,30 @@ $admin_id = $_SESSION['user_id'];
 if (isset($_GET['delete'])) {
     $id = intval($_GET['delete']);
     if ($id !== $admin_id) {
-        $conn->query("DELETE FROM users WHERE id=$id");
-        audit_log($conn, 'user_delete', 'user', $id, null);
-        header('Location: manage_users.php?msg=User+deleted');
-        exit();
+        // Begin transaction to safely delete with FK constraints
+        $conn->begin_transaction();
+        try {
+            // Null out audit logs user reference (keep logs)
+            $conn->query("UPDATE audit_logs SET user_id = NULL WHERE user_id = $id");
+            // Remove dependent rows owned by the user
+            $conn->query("DELETE FROM favorites WHERE user_id = $id");
+            $conn->query("DELETE FROM comments WHERE user_id = $id");
+            $conn->query("DELETE FROM ratings WHERE user_id = $id");
+            $conn->query("DELETE FROM reports WHERE user_id = $id");
+            $conn->query("DELETE FROM suggested_edits WHERE user_id = $id");
+            // Delete user's spots (will cascade delete related rows that reference spots via their own FKs)
+            $conn->query("DELETE FROM spots WHERE user_id = $id");
+            // Finally delete the user
+            $conn->query("DELETE FROM users WHERE id = $id");
+            $conn->commit();
+            audit_log($conn, 'user_delete', 'user', $id, null);
+            header('Location: manage_users.php?msg=User+deleted');
+            exit();
+        } catch (Exception $e) {
+            $conn->rollback();
+            header('Location: manage_users.php?msg=Failed+to+delete+user');
+            exit();
+        }
     }
 }
 if (isset($_GET['promote']) && isset($_GET['role'])) {

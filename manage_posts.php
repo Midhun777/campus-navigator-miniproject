@@ -48,6 +48,7 @@ $allowedSort = [
     'created_at' => 'spots.created_at',
     'name' => 'spots.name',
     'category' => 'categories.name',
+    'college' => 'colleges.name',
     'user' => 'users.name',
     'status' => 'spots.status'
 ];
@@ -84,7 +85,7 @@ $totalPages = max(1, (int)ceil($total / $perPage));
 if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
 
 // Data
-$sql = "SELECT spots.*, users.name AS user_name, categories.name AS category_name FROM spots LEFT JOIN users ON spots.user_id = users.id LEFT JOIN categories ON spots.category_id = categories.id $whereSql ORDER BY " . $allowedSort[$sort] . " $dir LIMIT $perPage OFFSET $offset";
+$sql = "SELECT spots.*, users.name AS user_name, categories.name AS category_name, colleges.name AS college_name FROM spots LEFT JOIN users ON spots.user_id = users.id LEFT JOIN categories ON spots.category_id = categories.id LEFT JOIN colleges ON spots.college_id = colleges.id $whereSql ORDER BY " . $allowedSort[$sort] . " $dir LIMIT $perPage OFFSET $offset";
 $res = $conn->query($sql);
 $posts = [];
 if ($res) {
@@ -141,6 +142,7 @@ include 'includes/header.php';
             <tr>
                 <th class="px-4 py-2"><a href="<?php echo build_sort_url('name'); ?>" class="hover:underline">Name</a></th>
                 <th class="px-4 py-2"><a href="<?php echo build_sort_url('category'); ?>" class="hover:underline">Category</a></th>
+                <th class="px-4 py-2"><a href="<?php echo build_sort_url('college'); ?>" class="hover:underline">College</a></th>
                 <th class="px-4 py-2"><a href="<?php echo build_sort_url('user'); ?>" class="hover:underline">User</a></th>
                 <th class="px-4 py-2"><a href="<?php echo build_sort_url('status'); ?>" class="hover:underline">Status</a></th>
                 <th class="px-4 py-2">Actions</th>
@@ -151,6 +153,7 @@ include 'includes/header.php';
             <tr class="border-t">
                 <td class="px-4 py-2"><?php echo htmlspecialchars($post['name']); ?></td>
                 <td class="px-4 py-2"><?php echo htmlspecialchars($post['category_name']); ?></td>
+                <td class="px-4 py-2"><?php echo htmlspecialchars($post['college_name'] ?: '—'); ?></td>
                 <td class="px-4 py-2"><?php echo htmlspecialchars($post['user_name']); ?></td>
                 <td class="px-4 py-2 capitalize"><?php echo htmlspecialchars($post['status']); ?></td>
                 <td class="px-4 py-2 space-x-2">

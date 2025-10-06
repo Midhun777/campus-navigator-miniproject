@@ -6,6 +6,11 @@ require_login();
 
 $user_id = $_SESSION['user_id'];
 
+// Load colleges for dropdown
+$colleges = [];
+$c_res = $conn->query('SELECT id, name, code FROM colleges ORDER BY name');
+if ($c_res) { while ($r = $c_res->fetch_assoc()) { $colleges[] = $r; } }
+
 // Fetch user info
 $stmt = $conn->prepare('SELECT * FROM users WHERE id = ?');
 $stmt->bind_param('i', $user_id);
@@ -50,6 +55,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_profile_pic'])
             $upload_error = 'Image upload error (code ' . $fileError . ').';
         }
     }
+}
+
+// Handle college change
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_college'])) {
+    $newCollegeId = isset($_POST['college_id']) && $_POST['college_id'] !== '' ? intval($_POST['college_id']) : NULL;
+    $upd = $conn->prepare('UPDATE users SET college_id = ? WHERE id = ?');
+    if ($newCollegeId === NULL) {
+        $null = NULL;
+        $upd->bind_param('ii', $null, $user_id);
+    } else {
+        $upd->bind_param('ii', $newCollegeId, $user_id);
+    }
+    $upd->execute();
+    $_SESSION['college_id'] = $newCollegeId;
+    header('Location: profile.php?msg=College+updated');
+    exit();
 }
 
 // Handle delete post
@@ -109,6 +130,22 @@ include 'includes/header.php';
         </form>
         <?php if (isset($upload_error)): ?><div class="mt-2 text-red-600"><?php echo $upload_error; ?></div><?php endif; ?>
         <?php if (isset($_GET['msg'])): ?><div class="mt-2 text-green-600"><?php echo htmlspecialchars($_GET['msg']); ?></div><?php endif; ?>
+    </div>
+    <div class="mb-8">
+        <form method="POST" class="flex items-center gap-3">
+            <label class="block">
+                <span class="text-sm">College</span>
+                <select name="college_id" class="px-3 py-2 border rounded">
+                    <option value="">No college (see all posts)</option>
+                    <?php foreach ($colleges as $col): ?>
+                        <option value="<?php echo (int)$col['id']; ?>" <?php echo ($user['college_id'] && (int)$user['college_id'] === (int)$col['id']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($col['name']); ?><?php echo isset($col['code']) && $col['code'] ? ' ('.htmlspecialchars($col['code']).')' : ''; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <button type="submit" name="change_college" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Change College</button>
+        </form>
     </div>
     <h3 class="text-xl font-semibold mb-2">Your Posts</h3>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
