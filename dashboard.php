@@ -101,7 +101,7 @@ if ($pc) { $pending_approvals_count = (int)$pc->fetch_assoc()['c']; }
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
       <?php foreach ($categories as $cat): ?>
         <a href="dashboard.php?cat=<?php echo $cat['id']; ?>" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 flex flex-col items-center transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 border <?php echo ($active_cat === (int)$cat['id']) ? 'border-blue-500' : 'border-transparent'; ?>">
-          <div class="text-4xl mb-2 animate-fade-in-slow"><?php echo $cat['icon'] ? $cat['icon'] : '📍'; ?></div>
+          <div class="mb-2 animate-fade-in-slow"><?php echo get_category_icon_html($cat['name'], $cat['icon']); ?></div>
           <div class="font-semibold text-gray-900 dark:text-gray-100 transition-colors duration-300"><?php echo htmlspecialchars($cat['name']); ?></div>
         </a>
       <?php endforeach; ?>
@@ -138,4 +138,4 @@ function updateLiveTime() {
 setInterval(updateLiveTime, 1000);
 updateLiveTime();
 </script>
-<?php include 'includes/footer.php'; ?> 
+<?php include 'includes/footer.php'; ?>

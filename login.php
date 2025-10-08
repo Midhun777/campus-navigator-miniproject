@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['role'] = $role;
             $_SESSION['college_id'] = $college_id; // may be NULL
             audit_log($conn, 'login', 'user', $id, ['email' => $email]);
-            header('Location: dashboard.php');
+            header('Location: landing.php');
             exit();
         } else {
             $error = 'Invalid password.';

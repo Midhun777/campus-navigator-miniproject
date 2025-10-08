@@ -22,7 +22,7 @@ $pendingApprovalsDisplay = $pendingApprovals > 99 ? '99+' : $pendingApprovals;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campus Navigator</title>
+    <title>Spotyfind</title>
     <link href="src/output.css" rel="stylesheet">
     <!-- <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"> -->
     <script>
@@ -58,7 +58,7 @@ $pendingApprovalsDisplay = $pendingApprovals > 99 ? '99+' : $pendingApprovals;
 <header class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 shadow">
     <div class="flex items-center space-x-2">
         <img src="/assets/images/logo.png" alt="Logo" class="h-10 w-10">
-        <span class="font-bold text-xl">Campus Navigator</span>
+        <span class="font-bold text-xl">Spotyfind</span>
     </div>
     <nav class="space-x-4">
         <a href="index.php" class="hover:underline">Home</a>

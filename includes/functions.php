@@ -42,4 +42,33 @@ function audit_log($conn, $action, $entityType = null, $entityId = null, $detail
         $stmt->execute();
     }
 }
+
+/**
+ * Return HTML for a category icon using an asset from assets/icons/category if available.
+ * Falls back to provided icon field (emoji/text) or a default pin.
+ *
+ * @param string $categoryName
+ * @param string|null $iconField
+ * @return string HTML markup for the icon
+ */
+function get_category_icon_html($categoryName, $iconField = null) {
+    $slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $categoryName), '-'));
+    $relativeDir = 'assets/icons/category/';
+    $absDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . $relativeDir;
+    $candidates = [
+        $slug . '.png',
+        $slug . '.svg',
+    ];
+    foreach ($candidates as $filename) {
+        $absPath = $absDir . $filename;
+        if (file_exists($absPath)) {
+            $src = $relativeDir . $filename;
+            return '<img src="' . htmlspecialchars($src) . '" alt="' . htmlspecialchars($categoryName) . ' icon" class="object-cover" style="width:34px;height:34px" />';
+        }
+    }
+    if (!empty($iconField)) {
+        return '<span style="font-size:34px;line-height:34px;display:inline-block;">' . htmlspecialchars($iconField) . '</span>';
+    }
+    return '<span style="font-size:34px;line-height:34px;display:inline-block;">📍</span>';
+}
 ?> 
