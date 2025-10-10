@@ -24,6 +24,9 @@ $pendingApprovalsDisplay = $pendingApprovals > 99 ? '99+' : $pendingApprovals;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spotyfind</title>
     <link href="src/output.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playwrite+DE+Grund:wght@400;700&display=swap" rel="stylesheet">
     <!-- <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"> -->
     <script>
     window.addEventListener('DOMContentLoaded', () => {
@@ -57,8 +60,7 @@ $pendingApprovalsDisplay = $pendingApprovals > 99 ? '99+' : $pendingApprovals;
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
 <header class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 shadow">
     <div class="flex items-center space-x-2">
-        <img src="/assets/images/logo.png" alt="Logo" class="h-10 w-10">
-        <span class="font-bold text-xl">Spotyfind</span>
+        <span class="font-bold text-2xl md:text-3xl" style="font-family: 'Playwrite DE Grund', serif;">Spotyfind</span>
     </div>
     <nav class="space-x-4">
         <a href="index.php" class="hover:underline">Home</a>

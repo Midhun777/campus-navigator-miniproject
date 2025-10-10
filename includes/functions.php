@@ -52,18 +52,56 @@ function audit_log($conn, $action, $entityType = null, $entityId = null, $detail
  * @return string HTML markup for the icon
  */
 function get_category_icon_html($categoryName, $iconField = null) {
-    $slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $categoryName), '-'));
+    $name = trim($categoryName);
+    $baseSlug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $name), '-'));
+    $altAnd = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', str_replace('&', 'and', $name)), '-'));
+    $noHyphen = str_replace('-', '', $baseSlug);
+    $underscore = str_replace('-', '_', $baseSlug);
+    $singular = preg_replace('/s$/', '', $baseSlug); // Parks -> Park, Labs -> Lab
+    // Common alias basenames for specific categories
+    $aliasMap = [
+        'bus' => ['bus', 'bus-stop', 'bus-stand', 'transport', 'shuttle'],
+        'atm' => ['atm', 'bank-atm'],
+        'restaurant' => ['restaurant', 'diner', 'canteen'],
+        'canteen' => ['canteen', 'mess', 'cafeteria'],
+        'parking' => ['parking', 'car-park', 'parking-lot'],
+        'parks' => ['parks', 'park', 'garden'],
+        'garden' => ['garden', 'park'],
+        'lab' => ['lab', 'laboratory'],
+        'library' => ['library', 'books'],
+        'others' => ['others', 'other', 'misc'],
+    ];
+    $lowerName = strtolower($name);
+    $aliasCandidates = isset($aliasMap[$lowerName]) ? $aliasMap[$lowerName] : [];
+
+    // Derive tokens from slug (e.g., "bus-stop" -> ["bus", "stop"]) and add common keyword bases
+    $tokens = array_filter(explode('-', $baseSlug));
+    $keywordBases = [];
+    if (strpos($baseSlug, 'bus') !== false) { $keywordBases[] = 'bus'; }
+    if (strpos($baseSlug, 'atm') !== false) { $keywordBases[] = 'atm'; }
+    if (strpos($baseSlug, 'park') !== false) { $keywordBases[] = 'park'; }
+    if (strpos($baseSlug, 'garden') !== false) { $keywordBases[] = 'garden'; }
+
+    $variants = array_unique(array_filter(array_merge($aliasCandidates, $tokens, $keywordBases, [
+        $baseSlug,
+        $altAnd,
+        $noHyphen,
+        $underscore,
+        $singular,
+    ])));
+
     $relativeDir = 'assets/icons/category/';
     $absDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . $relativeDir;
-    $candidates = [
-        $slug . '.png',
-        $slug . '.svg',
-    ];
-    foreach ($candidates as $filename) {
-        $absPath = $absDir . $filename;
-        if (file_exists($absPath)) {
-            $src = $relativeDir . $filename;
-            return '<img src="' . htmlspecialchars($src) . '" alt="' . htmlspecialchars($categoryName) . ' icon" class="object-cover" style="width:34px;height:34px" />';
+    $exts = ['.png', '.svg', '.jpg', '.jpeg'];
+
+    foreach ($variants as $slug) {
+        foreach ($exts as $ext) {
+            $filename = $slug . $ext;
+            $absPath = $absDir . $filename;
+            if (file_exists($absPath)) {
+                $src = $relativeDir . $filename;
+                return '<img src="' . htmlspecialchars($src) . '" alt="' . htmlspecialchars($categoryName) . ' icon" class="object-cover" style="width:34px;height:34px" />';
+            }
         }
     }
     if (!empty($iconField)) {
