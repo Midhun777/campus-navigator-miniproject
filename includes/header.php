@@ -63,7 +63,7 @@ $pendingApprovalsDisplay = $pendingApprovals > 99 ? '99+' : $pendingApprovals;
         <span class="font-bold text-2xl md:text-3xl" style="font-family: 'Playwrite DE Grund', serif;">Spotyfind</span>
     </div>
     <nav class="space-x-4">
-        <a href="index.php" class="hover:underline">Home</a>
+        <a href="landing.php" class="hover:underline">Home</a>
         <a href="dashboard.php" class="hover:underline">Dashboard</a>
         <?php // Admin/faculty links moved to avatar dropdown ?>
     </nav>
