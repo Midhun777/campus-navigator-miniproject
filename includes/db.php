@@ -20,4 +20,6 @@ $conn->query("CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 )");
+// Ensure faculty_status column exists on users so we can track pending faculty requests
+$conn->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS faculty_status ENUM('none','pending') DEFAULT 'none'");
 ?> 

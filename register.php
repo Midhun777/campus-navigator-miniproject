@@ -58,12 +58,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    $stmt = $conn->prepare('INSERT INTO users (name, email, password, role, profile_pic, college_id) VALUES (?, ?, ?, ?, ?, ?)');
-    $stmt->bind_param('sssssi', $name, $email, $password, $role, $profile_pic, $college_id);
+    // If user selected faculty during registration, create a pending faculty request
+    // but keep their role as 'user' until an admin approves.
+    $faculty_status = 'none';
+    $role_for_insert = $role;
+    if ($role === 'faculty') {
+        $faculty_status = 'pending';
+        $role_for_insert = 'user';
+    }
+
+    $stmt = $conn->prepare('INSERT INTO users (name, email, password, role, faculty_status, profile_pic, college_id) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    $stmt->bind_param('ssssssi', $name, $email, $password, $role_for_insert, $faculty_status, $profile_pic, $college_id);
     if ($stmt->execute()) {
         $_SESSION['user_id'] = $stmt->insert_id;
         $_SESSION['name'] = $name;
-        $_SESSION['role'] = $role;
+        $_SESSION['role'] = $role_for_insert;
         $_SESSION['college_id'] = $college_id;
         header('Location: dashboard.php');
         exit();
